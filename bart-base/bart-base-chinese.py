@@ -1,3 +1,9 @@
+# 先展示Chinese BART基本用法：
+from transformers import BertTokenizer, BartForConditionalGeneration
+tokenizer = BertTokenizer.from_pretrained("MODEL_NAME")
+model = BartForConditionalGeneration.from_pretrained("MODEL_NAME")
+print(model)
+# 接下来根据以上用法实现具体示例：
 # 1.构建数据集：LCSTS，训练集包含200万条数据集，为减少训练时间，将其截取到30万：data1_cutted.txt
 # 1.1）加载数据集
 
