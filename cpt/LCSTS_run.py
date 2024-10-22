@@ -110,8 +110,6 @@ model = model.to(device)
 # 3.模型训练
 # 3.1）训练函数
 from tqdm.auto import tqdm
-import os
-
 
 def train_loop(dataloader, model, optimizer, lr_scheduler, epoch, total_loss):
     model.train()
@@ -137,8 +135,6 @@ def train_loop(dataloader, model, optimizer, lr_scheduler, epoch, total_loss):
 # 3.2) 测试函数：在验证环节中添加评价指标，通常是准确率，召回率，f1,在此任务中使用rouge，包含以上指标
 # 注：解码的原因：rouge评价体系所需序列源是文本，而非数字编码
 from rouge import Rouge
-import random
-import numpy as np
 import numpy
 
 rouge = Rouge()
