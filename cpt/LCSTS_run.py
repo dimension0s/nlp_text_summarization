@@ -41,15 +41,15 @@ class LCSTS(Dataset):
     def __getitem__(self, idx):
         return self.data[idx]
 
-train_data = LCSTS("E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data1.txt")
-valid_data = LCSTS("E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data2.txt")
-test_data = LCSTS("E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data3.txt")
+train_data = LCSTS("data1.txt")
+valid_data = LCSTS("data2.txt")
+test_data = LCSTS("data3.txt")
 
 # 1.2)分批，分词，编码
 from transformers import BertTokenizer
 from modeling_cpt import CPTForConditionalGeneration
 
-model_path = "fnlp/cpt"
+model_path = "fnlp/cpt-base"
 tokenizer = BertTokenizer.from_pretrained(model_path)
 model = CPTForConditionalGeneration.from_pretrained(model_path)
 
@@ -232,7 +232,7 @@ for epoch in range(epoch_num):
             f.write('\n')  # 确保在文件关闭前执行写入操作
 
 # 4.模型测试
-test_data = LCSTS("data/data3.txt")  # E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data3.txt
+test_data = LCSTS("data/data3.txt") 
 test_dataloader = DataLoader(test_data, batch_size=32, shuffle=False, collate_fn=collote_fn)
 
 import json
