@@ -18,8 +18,8 @@ from torch.utils.data import Dataset, DataLoader
 # 削减训练数据集，减少运行时间
 import json
 
-input_filename = "E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data1.txt"  # 原文件
-output_filename = "E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data1_cutted.txt"  # 截取新文件
+input_filename = "data1.txt"  # 原文件
+output_filename = "data1_cutted.txt"  # 截取新文件
 
 lines_to_extract = 300000
 
@@ -57,9 +57,9 @@ class LCSTS(Dataset):
     def __getitem__(self, idx):
         return self.data[idx]
 
-train_data=LCSTS("E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data1_cutted.txt")
-valid_data=LCSTS("E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data2.txt")
-test_data=LCSTS("E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data3.txt")
+train_data=LCSTS("data1_cutted.txt")
+valid_data=LCSTS("data2.txt")
+test_data=LCSTS("data3.txt")
 
 # 1.2)分批，分词，编码
 from transformers import BertTokenizer,BartForConditionalGeneration,Text2TextGenerationPipeline
@@ -260,7 +260,7 @@ for epoch in range(epoch_num):
             f.write('\n')  # 确保在文件关闭前执行写入操作
 
 # 4.模型测试
-test_data = LCSTS("data/data3.txt")  # E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data3.txt
+test_data = LCSTS("data/data3.txt")  
 test_dataloader = DataLoader(test_data, batch_size=32, shuffle=False, collate_fn=collote_fn)
 
 import json
@@ -319,64 +319,7 @@ with torch.no_grad():
             f.write(json.dumps(example_result, ensure_ascii=False) + '\n')
 
 
-# 4.模型测试
-test_data = LCSTS("data/data3.txt")  # E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data3.txt
-test_dataloader = DataLoader(test_data, batch_size=32, shuffle=False, collate_fn=collote_fn)
 
-import json
-
-model.load_state_dict(torch.load('epoch_1_valid_rouge_6.6667_model_weights.bin'))
-
-model.eval()
-
-max_input_length = 512
-max_target_length = 64
-
-with torch.no_grad():
-    print('evaluating on test set...')
-    sources, preds, labels = [], [], []
-    for batch_data in test_dataloader:
-        batch_data = batch_data.to(device)
-        generated_tokens = model.generate(  # 1.生成预测
-            batch_data['input_ids'],
-            attention_mak=batch_data['attention_mask'],
-            max_length=max_target_length,
-            num_beams=4,
-            no_repeat_ngram_size=2).cpu().numpy()
-        if isinstance(generated_tokens, tuple):
-            generated_tokens = generated_tokens[0]
-        # 2.对预测解码
-        decoded_preds = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
-
-        # 转换标签并解码
-        label_tokens = batch_data['labels'].cpu().numpy()
-        label_tokens = np.where(labels != -100, label_tokens, tokenizer.pad_token_id)
-        decoded_labels = tokenizer.batch_decode(label_tokens, skip_special_tokens=True)
-
-        decoded_sources = tokenizer.batch_decode(
-            batch_data['input_ids'].cpu().numpy(),
-            skip_special_tokens=True,
-            use_source_tokenizer=True)
-
-        preds += [' '.join(pred.strip()) for pred in decoded_preds]
-        labels += [' '.join(label.strip()) for label in decoded_labels]
-        sources += [' '.join(source.strip()) for source in decoded_sources]
-    scores = rouge.get_scores(
-        hyps=preds, refs=labels, avg=True)
-    rouges = {key: value['f'] * 100 for key, value in scores.items()}
-    rouges['avg'] = np.mean(list(rouges.values()))
-    print(
-        f"Test Rouge1: {rouges['rouge-1']:>0.2f} Rouge2: {rouges['rouge-2']:>0.2f} RougeL: {rouges['rouge-l']:>0.2f}\n")
-    results = []
-    for source, pred, label in zip(sources, preds, labels):
-        results.append({
-            'document': source,
-            'prediction': pred,
-            'summarization': label
-        })
-    with open('test_data_pred.json', 'wt', encoding='utf-8') as f:
-        for example_result in results:
-            f.write(json.dumps(example_result, ensure_ascii=False) + '\n')
 
 # 显存分配：
 # 情况1.如果你是在 Python 脚本或 Jupyter Notebook 中运行的，需要通过 os.environ 来设置环境变量。
