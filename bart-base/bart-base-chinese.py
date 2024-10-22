@@ -164,7 +164,7 @@ import numpy as np
 
 rouge = Rouge()
 
-
+# rouge分数标准：
 # 0-30：低分
 # 30-50：中等
 # 50-70：高分
@@ -172,7 +172,7 @@ rouge = Rouge()
 
 def test_loop(dataloader, model, mode='Valid'):
     assert mode in ['Valid', 'Test']
-    model = model.to(device)
+    # model = model.to(device)
     model.eval()
 
     preds, labels = [], []
@@ -223,9 +223,6 @@ def seed_everything(seed=1029):
 
 
 seed_everything(5)
-
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(f'using {device} device')
 
 beam_size = 4
 no_repeat_ngram_size = 2
