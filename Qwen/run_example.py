@@ -1,5 +1,4 @@
-# 以下代码为初步尝试，还没debug，主要用于梳理逻辑，请谨慎使用
-
+# 注：以下代码为初步尝试，还没debug，主要用于梳理逻辑，请谨慎使用
 
 # 1.数据处理
 
@@ -39,8 +38,8 @@ class MyData(Dataset):
         return self.data[idx]
 
 
-train_data = MyData("E:/NLP任务/生成式任务/data/篇章级摘要示例数据.txt")
-valid_data = MyData("E:/NLP任务/生成式任务/data/篇章级摘要示例数据.txt")
+train_data = MyData("Qwen/example_data.txt")
+valid_data = MyData("Qwen/example_data.txt")
 print(train_data[0])
 print(len(train_data))
 
