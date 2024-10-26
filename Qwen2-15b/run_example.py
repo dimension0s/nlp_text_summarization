@@ -57,7 +57,7 @@ else:
 
 
 # 1.2）调用模型
-model_name = "E:/NLP任务/离线模型/Qwen2-1.5b"
+model_name = "Qwen/Qwen2-1.5B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name,torch_dtype="auto")
 model = model.to(device)
@@ -70,7 +70,6 @@ def collote_fn(batch_samples):
     batch_inputs, batch_targets = [],[]
     for sample in batch_samples:
         text = sample['content']
-        # 注意以下提示的设计，它可能是导致输入输出batch_size形状不匹配的主要原因
         messages = [
             {"role": "system", "content": "你是一个文本摘要的专家, 你会接收一段文本, 请将该文本生成摘要。"},
             {"role": "user", "content": text}
@@ -82,7 +81,7 @@ def collote_fn(batch_samples):
     # 编码：加了提示的原文本
     batch_data = tokenizer(
         batch_inputs,
-        max_length=max_length,  # 统一使用相同的长度
+        max_length=max_length,  # 统一使用相同的长度，避免损失计算时出现维度不匹配
         padding='max_length',
         truncation=True,
         return_tensors='pt').to(device)
@@ -91,7 +90,7 @@ def collote_fn(batch_samples):
     # 标签数据
     labels = tokenizer(
         batch_targets,
-        max_length=max_length,
+        max_length=max_length,   # 统一使用相同的长度，避免损失计算时出现维度不匹配
         padding='max_length',
         truncation=True,
         return_tensors="pt")['input_ids'].to(device)
@@ -150,8 +149,7 @@ def train_loop(dataloader, model, optimizer, lr_scheduler, epoch, total_loss):
     return total_loss
 
 
-# 3.2) 测试函数：在验证环节中添加评价指标，通常是准确率，召回率，f1,在此任务中使用rouge，包含以上指标
-# 注：解码的原因：rouge评价体系所需序列源是文本，而非数字编码
+# 3.2) 测试函数
 from rouge import Rouge
 import random
 import numpy as np
@@ -263,25 +261,29 @@ with torch.no_grad():
     print('evaluating on test set...')
     sources, preds, labels = [], [], []
     for batch_data in test_dataloader:
-        batch_data = batch_data.to(device)
+        model_inputs = batch_data['input_ids']
+        attention_mask = batch_data['attention_mask']
+        labels = batch_data['labels']
         generated_ids = model.generate(  # 1.生成预测
-            batch_data['input_ids'],
-            attention_mask=batch_data['attention_mask'],
+            model_inputs,
+            attention_mak=attention_mask,
             max_length=max_length,
             num_beams=4,
             no_repeat_ngram_size=2).cpu().numpy()
-        if isinstance(generated_tokens, tuple):
-            generated_tokens = generated_tokens[0]
+        if isinstance(generated_ids, tuple):
+            generated_ids = generated_ids[0]
         # 2.对预测解码
-        decoded_preds = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+        decoded_preds = [
+            output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+            ]
 
         # 转换标签并解码
-        label_tokens = batch_data['labels'].cpu().numpy()
+        label_tokens = labels.cpu().numpy()
         label_tokens = np.where(labels != -100, label_tokens, tokenizer.pad_token_id)
         decoded_labels = tokenizer.batch_decode(label_tokens, skip_special_tokens=True)
 
         decoded_sources = tokenizer.batch_decode(
-            batch_data['input_ids'].cpu().numpy(),
+            model_inputs.cpu().numpy(),
             skip_special_tokens=True,
             use_source_tokenizer=True)
 
