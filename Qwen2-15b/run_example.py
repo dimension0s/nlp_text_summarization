@@ -33,9 +33,9 @@ class LCSTS(Dataset):
         return self.data[idx]
 
 
-train_data = LCSTS("E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data1_cutted.txt")
-valid_data = LCSTS("E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data2.txt")
-test_data = LCSTS("E:\\NLP任务\\生成式任务\\data\\lcsts_tsv\\data3.txt")
+train_data = LCSTS("data1_cutted.txt")
+valid_data = LCSTS("data2.txt")
+test_data = LCSTS("data3.txt")
 
 # 打印测试
 print(train_data[0])
@@ -256,30 +256,24 @@ for epoch in range(epoch_num):
 
 
 # 4.模型测试
-
-
 model.load_state_dict(torch.load('***'))
-
 model.eval()
-
-max_input_length = 512
-max_target_length = 64
 
 with torch.no_grad():
     print('evaluating on test set...')
     sources, preds, labels = [], [], []
     for batch_data in test_dataloader:
         batch_data = batch_data.to(device)
-        generated_tokens = model.generate(  # 1.生成预测
+        generated_ids = model.generate(  # 1.生成预测
             batch_data['input_ids'],
-            attention_mak=batch_data['attention_mask'],
-            max_length=max_target_length,
+            attention_mask=batch_data['attention_mask'],
+            max_length=max_length,
             num_beams=4,
             no_repeat_ngram_size=2).cpu().numpy()
         if isinstance(generated_tokens, tuple):
             generated_tokens = generated_tokens[0]
         # 2.对预测解码
-        decoded_preds = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
+        decoded_preds = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
 
         # 转换标签并解码
         label_tokens = batch_data['labels'].cpu().numpy()
